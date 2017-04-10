@@ -1,173 +1,95 @@
 package com.modds.generator;
 
-import com.modds.generator.entity.DataBase;
-import com.modds.generator.entity.Table;
-import com.modds.generator.genera.JavaGenerator;
+import com.modds.generator.bean.Config;
+import com.modds.generator.bean.DataBase;
+import com.modds.generator.bean.Table;
+import com.modds.generator.utils.JarLoader;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 public class Runner {
-    private static String path = "entity";
-    private static String[] classNames = new String[]{"ShipStopping",
-            "ArriveShip", "TBLUserType"};
-    private static Map<String, String> fkTableNamesAndPk = new HashMap<String, String>();
 
-    // JDBC driver name and database URL
-    static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    static final String DB_URL = "jdbc:mysql://127.0.0.1:3306/app";
+    /**
+     * 两种方法
+     *
+     * @param path
+     */
+    public static String getResource(String path) {
 
-    //  Database credentials
-    static final String USER = "root";
-    static final String PASS = "root";
+//        Runner.class.getResource(path).getPath();
+//        Runner.class.getClassLoader().getResource(path).getPath();
 
-    public static void main(String[] args) {
-        test();
+        return Runner.class.getResource(path).getPath();
+
     }
 
-    public static void test() {
+    /**
+     * 分为三个部分<br>
+     * <p>1. 读取自定义的配置文件(yaml)</p>
+     * <p>2. 读取数据库，为生成文件做准备</p>
+     * <p>3. 生成mapper,dao,service,bean</p>
+     */
+    public static void main(String[] args) throws Exception {
+
+        String configfilepath = "application.yml";
+        if(args.length>0){
+            String s1 = args[0];
+            String s2 = args[1];
+            if(s1.equals("-configfile")){
+                configfilepath = s2;
+            }
+        }
+
+        Config config =null;
+        try {
+            config = Config.setConfig("application.yml");
+        } catch (Exception e) {
+            System.err.println(e.getLocalizedMessage());
+            System.out.println("so load default application.yml");
+            config = Config.setConfig(getResource("/application.yml"));
+        }
         Connection conn = null;
         DatabaseMetaData metaData = null;
         ResultSet rs = null;
         ResultSet crs = null;
         try {
-            Class.forName("com.mysql.jdbc.Driver");
-            conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            String catalog = conn.getCatalog(); // catalog 其实也就是数据库名
+            // base data
+            String jarlocation = config.getJdbc().get("location");
+            String driverClass = config.getJdbc().get("driverClass");
+            String db_url = config.getJdbc().get("url");
+            String user = config.getJdbc().get("username");
+            String password = config.getJdbc().get("password");
+
+            JarLoader.load(jarlocation);
+            Class.forName(config.getJdbc().get("driverClass"));
+            conn = DriverManager.getConnection(db_url, user, password);
             metaData = conn.getMetaData();
 
             DataBase dataBase = TableInfoUtils.concerTableInfo(metaData);
 
-
+            GeneratorFactory generatorFactory = new GeneratorFactory(config);
             if (dataBase.getTables() != null && dataBase.getTables().size() > 0) {
                 for (Map.Entry<String, Table> entry : dataBase.getTables().entrySet()) {
-                    dataBase.getTables().put(entry.getKey(), entry.getValue());
-                    GeneratorUtils.generateXml(entry.getValue());
-                    new JavaGenerator(entry.getValue()).generator();
+                    generatorFactory.getGenerator(entry.getValue()).generate();
                 }
             }
+            System.out.println("success");
 
 
         } catch (Exception e) {
             e.printStackTrace(System.out);
         } finally {
-            try {
-                if (null != rs) {
+                if (rs != null) {
                     rs.close();
                 }
-                if (null != conn) {
+                if (conn != null) {
                     conn.close();
                 }
-            } catch (Exception e2) {
-            }
         }
     }
-
-
-
-    /**
-     * 适合表名为单个单词， 例如：表名是TBLUSER 类名是TBLUser;当表名是USER 类名是User;当表面是USERTYPE(两个单词)
-     * 时，类名是Usertype,如果要 UserType，将期望的类名添加到classNames字段中（与数据库表名一致 不区分大小写）。
-     *
-     * @param tablename
-     * @return
-     */
-    public static String getClassName(String tablename) {
-        String res = tablename.toLowerCase();
-        if (tablename.startsWith("TBL")) {
-            return tablename.substring(0, 4) + res.substring(4);
-        }
-        return tablename.substring(0, 1).toUpperCase() + res.substring(1);
-    }
-
-    /**
-     * 设置字段类型 MySql数据类型
-     *
-     * @param columnType 列类型字符串
-     * @param sbpackage  封装包信息
-     * @return
-     */
-    public static String getFieldType(String columnType, StringBuffer sbpackage) {
-        /*
-         * tinyblob tinyblob byte[]
-            tinytext varchar java.lang.string
-            blob blob byte[]
-            text varchar java.lang.string
-            mediumblob mediumblob byte[]
-            mediumtext varchar java.lang.string
-            longblob longblob byte[]
-            longtext varchar java.lang.string
-            enum('value1','value2',...) char java.lang.string
-            set('value1','value2',...) char java.lang.string
-         */
-        columnType = columnType.toLowerCase();
-        if (columnType.equals("varchar") || columnType.equals("nvarchar")
-                || columnType.equals("char")
-//                || columnType.equals("tinytext")
-//                || columnType.equals("text")
-//                || columnType.equals("mediumtext")
-//                || columnType.equals("longtext")
-                ) {
-            return "String";
-        } else if (columnType.equals("tinyblob")
-                || columnType.equals("blob")
-                || columnType.equals("mediumblob")
-                || columnType.equals("longblob")) {
-            return "byte[]1111";
-        } else if (columnType.equals("datetime")
-                || columnType.equals("date")
-                || columnType.equals("timestamp")
-                || columnType.equals("time")
-                || columnType.equals("year")) {
-            sbpackage.append("import java.util.Date;\r\n");
-            return "Date";
-        } else if (columnType.equals("bit")
-                || columnType.equals("int")
-                || columnType.equals("tinyint")
-                || columnType.equals("smallint")
-//                ||columnType.equals("bool")
-//                ||columnType.equals("mediumint")
-//                ||columnType.equals("bigint")
-                ) {
-            return "int";
-        } else if (columnType.equals("float")) {
-            return "Float";
-        } else if (columnType.equals("double")) {
-            return "Double";
-        } else if (columnType.equals("decimal")) {
-//            sbpackage.append("import java.math.BigDecimal;\r\n");
-//            return "BigDecimal";
-        }
-        return "ErrorType";
-    }
-
-    /**
-     * 设置类标题注释
-     *
-     * @param sbpackage
-     * @param className
-     */
-    public static void getTitle(StringBuffer sbpackage, String className) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy年MM月dd日");
-        sbpackage.append("\r\n/**\r\n");
-        sbpackage.append("*\r\n");
-        sbpackage.append("* 标题: " + className + "<br/>\r\n");
-        sbpackage.append("* 说明: <br/>\r\n");
-        sbpackage.append("*\r\n");
-        sbpackage.append("* 作成信息: DATE: " + format.format(new Date())
-                + " NAME: author\r\n");
-        sbpackage.append("*\r\n");
-        sbpackage.append("* 修改信息<br/>\r\n");
-        sbpackage.append("* 修改日期 修改者 修改ID 修改内容<br/>\r\n");
-        sbpackage.append("*\r\n");
-        sbpackage.append("*/\r\n");
-    }
-
 
 }

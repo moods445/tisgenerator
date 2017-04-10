@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<#assign primarykeys = table.primarykeys>
+<#assign columns = table.columns>
+
+<#--TODO jdbctype -->
+<mapper namespace="${config.packageName}.dao.${table.entityName}Dao">
+    <resultMap id="BaseResultMap" type="${config.packageName}.entity.${table.entityName}">
+        <#assign keys = primarykeys?keys>
+        <#list keys as key>
+        <id column="${key}" property="${primarykeys[key].propertyName}" jdbcType="${primarykeys[key].type_name}"/>
+        </#list>
+        <#assign ckeys = columns?keys>
+        <#list ckeys as key>
+        <result column="${key}" property="${columns[key].propertyName}" jdbcType="${columns[key].type_name}"/>
+        </#list>
+    </resultMap>
+    <sql id="Base_Column_List">
+    <#list keys as key>
+        ${key},
+    </#list>
+    <#assign i = 1>
+    <#list ckeys as key>
+        ${key}<#if i!=ckeys?size>,</#if>
+        <#assign i=i+1>
+    </#list>
+    </sql>
+    <select id="select${table.entityName}ByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        select
+        <include refid="Base_Column_List"/>
+        from ${table.table_name}
+        where <#if columns.is_deleted??> is_deleted=0 and </#if>
+            id = ${'#{'}id,jdbcType=BIGINT}
+    </select>
+    <delete id="delete${table.entityName}ByPrimaryKey" parameterType="java.lang.Long">
+        update  ${table.table_name} set is_deleted=1,update_at=current_timestamp
+        where id = ${'#{'}id,jdbcType=BIGINT}
+    </delete>
+    <insert id="insert${table.entityName}Selective" parameterType="${config.packageName}.entity.${table.entityName}">
+        insert into ${table.table_name}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+        <#assign ckeys = columns?keys>
+                <#list ckeys as key>
+            <if test=" ${columns[key].propertyName} !=null">
+                ${columns[key].column_name},
+            </if>
+            </#list>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+        <#assign ckeys = columns?keys>
+                <#list ckeys as key>
+            <if test=" ${columns[key].propertyName} !=null ">
+               ${'#{'}${columns[key].propertyName},jdbcType=${columns[key].type_name}},
+            </if>
+            </#list>
+        </trim>
+    </insert>
+    <update id="update${table.entityName}ByPrimaryKeySelective" parameterType="${config.packageName}.entity.${table.entityName}">
+        update  ${table.table_name}
+        <set>
+        <#assign ckeys = columns?keys>
+        <#list ckeys as key>
+            <if test=" ${columns[key].propertyName} !=null">
+                ${columns[key].column_name} = ${'#{'}${columns[key].propertyName},jdbcType=${columns[key].type_name}},
+            </if>
+            </#list>
+        </set>
+        <where>
+            id = ${'#{'}id,jdbcType=BIGINT}
+        </where>
+    </update>
+    <select id="select${table.entityName}ByCondition" parameterType="${config.packageName}.entity.${table.entityName}" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from  ${table.table_name}
+        <where>
+           <#if columns.is_deleted??> is_deleted=0 </#if>
+          <#assign ckeys = columns?keys>
+        <#list ckeys as key>
+            <if test=" ${columns[key].propertyName} !=null">
+               and ${columns[key].column_name} = ${'#{'}${columns[key].propertyName},jdbcType=${columns[key].type_name}}
+            </if>
+        </#list>
+        </where>
+    </select>
+</mapper>
+

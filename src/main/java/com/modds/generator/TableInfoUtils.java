@@ -1,10 +1,10 @@
 package com.modds.generator;
 
-import com.alibaba.fastjson.JSON;
-import com.modds.generator.entity.Column;
-import com.modds.generator.entity.DataBase;
-import com.modds.generator.entity.PrimaryKey;
-import com.modds.generator.entity.Table;
+import com.modds.generator.bean.Column;
+import com.modds.generator.bean.DataBase;
+import com.modds.generator.bean.PrimaryKey;
+import com.modds.generator.bean.Table;
+import com.modds.generator.utils.JdbcType;
 import com.modds.generator.utils.StringHelperUtils;
 
 import java.lang.reflect.Field;
@@ -34,15 +34,11 @@ public class TableInfoUtils {
             table.setTable_cat(rs.getString("TABLE_CAT"));
             table.setTable_schem(rs.getString("TABLE_SCHEM"));
 
-            StringBuffer sb = new StringBuffer();
-            StringBuffer sbpackage = new StringBuffer();
-
             // 获取当前表的非主键列
             TableInfoUtils.converColumnInfo(metaData, table);
 
             // 获取主键列
             converPrimaryKeyInfo(metaData,table);
-
         }
         return dataBase;
     }
@@ -72,9 +68,9 @@ public class TableInfoUtils {
         if(column == null){
             column = cls.newInstance();
         }
-        String tableCat = crs.getString("TABLE_CAT");  //表类别（可能为空）
-        String tableSchemaName = crs.getString("TABLE_SCHEM");  //表模式（可能为空）,在oracle中获取的是命名空间,其它数据库未知
-        String tableName_ = crs.getString("TABLE_NAME");  //表名
+//        String tableCat = crs.getString("TABLE_CAT");  //表类别（可能为空）
+//        String tableSchemaName = crs.getString("TABLE_SCHEM");  //表模式（可能为空）,在oracle中获取的是命名空间,其它数据库未知
+//        String tableName_ = crs.getString("TABLE_NAME");  //表名
 
 
         String columnName = crs.getString("COLUMN_NAME");  //列名
@@ -84,8 +80,8 @@ public class TableInfoUtils {
         int dataType = crs.getInt("DATA_TYPE");     //对应的java.sql.Types的SQL类型(列类型ID)
         column.setData_type(dataType);
 
-        String dataTypeName = crs.getString("TYPE_NAME");  //java.sql.Types类型名称(列类型名称)
-        column.setType_name(dataTypeName);
+//        String dataTypeName = crs.getString("TYPE_NAME");  //java.sql.Types类型名称(列类型名称)
+        column.setType_name(JdbcType.forCode(dataType).name());
 
         int columnSize = crs.getInt("COLUMN_SIZE");  //列大小
         column.setColumn_size(columnSize);

@@ -4,9 +4,11 @@
 *.jar
 *.war
 *.ear
+
 # idea
-.idea/*
-generator.iml
+*.iml
+.idea/
+bin/
 
 # target
 target/*
@@ -14,11 +16,7 @@ target/*
 # vscode
 .settings/
 
-#idea
-.idea/
-
 #
 out/
 *.project
 *.classpath
-*.iml

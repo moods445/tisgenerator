@@ -1,0 +1,28 @@
+# 配置
+
+
+jdbc:
+    location: D:\repository\mysql\mysql-connector-java\5.1.39\mysql-connector-java-5.1.39.jar
+    driverClass: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1/xiubo_app?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&rewriteBatchedStatements=TRUE&zeroDateTimeBehavior=convertToNull
+    username: root
+    password: root
+
+packageName : com.ninehcom.xiuboxiu
+
+
+out : d://tmp/out/
+
+ftl:
+     dao: dao.ftl
+     entity: entity.ftl
+     mapper: mapper.ftlx
+     service: service.ftl
+
+extension: # 扩展名
+     dao : .java
+     entity: .java
+     mapper:  .xml
+     service: .java
+
+templates : D:\ideaWorkspace\generator\src\main\resources\templates

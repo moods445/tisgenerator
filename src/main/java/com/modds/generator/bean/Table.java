@@ -1,8 +1,8 @@
-package com.modds.generator.entity;
+package com.modds.generator.bean;
 
 import com.modds.generator.utils.StringHelperUtils;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -15,32 +15,21 @@ public class Table {
     String remarks;
     String table_cat;
     String table_schem;
-    Map<String, Column> columns = new HashMap<>();
-    Map<String, PrimaryKey> primarykeys = new HashMap<>();
+    Map<String, Column> columns = new LinkedHashMap<>();
+    Map<String, PrimaryKey> primarykeys = new LinkedHashMap<>();
 
-    Map<String, Column> allColumns;
+    Map<String,Column> allColumns = new LinkedHashMap<>();
 
-
-    HierarchyName hierarchyName;
+    private String entityName;
 
     public String getTable_name() {
         return table_name;
     }
 
-    public HierarchyName getHierarchyName() {
-        return hierarchyName;
-    }
-
-    public void setHierarchyName(HierarchyName hierarchyName) {
-        this.hierarchyName = hierarchyName;
-    }
-
     public void setTable_name(String table_name) {
-
-        String tmp = StringHelperUtils.slide2Camel(table_name.replaceAll("xb_", ""));
-        String commonName = String.valueOf(tmp.charAt(0)).toUpperCase() + tmp.substring(1);
-
-        hierarchyName = new HierarchyName(table_name);
+        String entityName = StringHelperUtils.slide2Camel(table_name.toLowerCase().replaceAll("xb_",""));
+        entityName = StringHelperUtils.replaceToUpperCase(entityName,0);
+        this.entityName = entityName;
         this.table_name = table_name;
     }
 
@@ -84,14 +73,6 @@ public class Table {
         this.columns = columns;
     }
 
-    public String generateXmlName() {
-        return hierarchyName.getXml_name();
-    }
-
-    public String generateXmlFullName() {
-        return generateXmlName() + ".xml";
-    }
-
     public Map<String, PrimaryKey> getPrimarykeys() {
         return primarykeys;
     }
@@ -100,10 +81,19 @@ public class Table {
         this.primarykeys = primarykeys;
     }
 
-    public Map<String, Column> getColumnsIncludePrimaryKey() {
-        allColumns = new HashMap<>();
-        allColumns.putAll(primarykeys);
-        allColumns.putAll(columns);
+    public String getEntityName() {
+        return entityName;
+    }
+
+    public void setEntityName(String entityName) {
+        this.entityName = entityName;
+    }
+
+    public Map<String, Column> getAllColumns() {
         return allColumns;
+    }
+
+    public void setAllColumns(Map<String, Column> allColumns) {
+        this.allColumns = allColumns;
     }
 }

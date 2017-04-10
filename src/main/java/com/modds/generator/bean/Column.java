@@ -1,5 +1,6 @@
-package com.modds.generator.entity;
+package com.modds.generator.bean;
 
+import com.modds.generator.utils.JdbcJavaType;
 import com.modds.generator.utils.StringHelperUtils;
 
 /**
@@ -10,14 +11,16 @@ public class Column {
     public String column_name;
     int data_type; //对应的java.sql.Types的SQL类型(列类型ID)
     String type_name; //java.sql.Types类型名称(列类型名称)
+    String jdbc_name; // mybatis 中jdbcType
+
     int column_size;  //列大小
     int decimal_digits;  //小数位数
     int num_prec_radix; //基数（通常是10或2） --未知
 
     /**
-     *  0 (columnNoNulls) - 该列不允许为空
-     *  1 (columnNullable) - 该列允许为空
-     *  2 (columnNullableUnknown) - 不确定该列是否为空
+     * 0 (columnNoNulls) - 该列不允许为空
+     * 1 (columnNullable) - 该列允许为空
+     * 2 (columnNullableUnknown) - 不确定该列是否为空
      */
     int nullable;
 
@@ -37,21 +40,24 @@ public class Column {
 
     int ordinal_position; //表中列的索引（从1开始）
 
-    String javaFieldName;
+    String propertyName;
 
-    public String getJavaFieldName() {
-        return StringHelperUtils.slide2Camel(column_name);
+    String propertyType;
+
+    public String getPropertyType() {
+        return propertyType;
     }
 
-//    public void setJavaFieldName(String javaFieldName) {
-//        this.javaFieldName = javaFieldName;
-//    }
+    public void setPropertyType(String propertyType) {
+        this.propertyType = propertyType;
+    }
 
     public String getColumn_name() {
         return column_name;
     }
 
     public void setColumn_name(String column_name) {
+        this.propertyName = StringHelperUtils.slide2Camel(column_name.toLowerCase());
         this.column_name = column_name;
     }
 
@@ -68,7 +74,17 @@ public class Column {
     }
 
     public void setType_name(String type_name) {
+        this.propertyType = JdbcJavaType.forCode(this.data_type).JAVA_CLASS.getSimpleName();
+        this.jdbc_name= JdbcJavaType.forCode(this.data_type).getJavaClassName();
         this.type_name = type_name;
+    }
+
+    public String getJdbc_name() {
+        return jdbc_name;
+    }
+
+    public void setJdbc_name(String jdbc_name) {
+        this.jdbc_name = jdbc_name;
     }
 
     public int getColumn_size() {
@@ -141,5 +157,13 @@ public class Column {
 
     public void setOrdinal_position(int ordinal_position) {
         this.ordinal_position = ordinal_position;
+    }
+
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    public void setPropertyName(String propertyName) {
+        this.propertyName = propertyName;
     }
 }
